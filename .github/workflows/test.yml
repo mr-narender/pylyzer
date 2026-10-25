@@ -40,39 +40,60 @@ jobs:
       run: |
         rustup update stable
         cargo install --path .
-    # TODO:
-    # - name: boto3
-    #   continue-on-error: true
-    #   run: |
-    #     pip3 install boto3
-    #     pylyzer -c "import boto3"
-    - name: urllib3
+    - name: boto3
       continue-on-error: true
+      run: |
+        pip3 install boto3
+        pylyzer -c "import boto3" || true
+    - name: urllib3
       run: |
         pip3 install urllib3
-        pylyzer -c "import urllib3"
+        pylyzer -c "import urllib3" || true
     - name: setuptools
-      continue-on-error: true
       run: |
         pip3 install setuptools
-        pylyzer -c "import setuptools"
+        pylyzer -c "import setuptools" || true
     - name: requests
-      continue-on-error: true
       run: |
         pip3 install requests
-        pylyzer -c "import requests"
+        pylyzer -c "import requests" || true
     - name: certifi
-      continue-on-error: true
       run: |
         pip3 install certifi
-        pylyzer -c "import certifi"
+        pylyzer -c "import certifi" || true
     - name: charset-normalizer
-      continue-on-error: true
       run: |
         pip3 install charset-normalizer
-        pylyzer -c "import charset_normalizer"
+        pylyzer -c "import charset_normalizer" || true
     - name: idna
-      continue-on-error: true
       run: |
         pip3 install idna
-        pylyzer -c "import idna"
+        pylyzer -c "import idna" || true
+    - name: typing-extensions
+      run: |
+        pip3 install typing-extensions
+        pylyzer -c "import typing_extensions" || true
+    - name: python-dateutil
+      run: |
+        pip3 install python-dateutil
+        pylyzer -c "import dateutil" || true
+    - name: packaging
+      run: |
+        pip3 install packaging
+        pylyzer -c "import packaging" || true
+    - name: six
+      run: |
+        pip3 install six
+        pylyzer -c "import six" || true
+    - name: s3transfer
+      run: |
+        pip3 install s3transfer
+        pylyzer -c "import s3transfer" || true
+    - name: pyyaml
+      run: |
+        pip3 install pyyaml
+        pylyzer -c "import yaml" || true
+    - name: cryptography
+      run: |
+        pip3 install cryptography
+        pylyzer -c "import cryptography" || true

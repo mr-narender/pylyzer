@@ -32,10 +32,10 @@ pub(crate) fn self_not_found_error(input: Input, loc: Location, caused_by: Strin
         ErrorCore::new(
             vec![SubMessage::only_loc(loc)],
             switch_lang!(
-                "japanese" => format!("このメソッドは第一引数にselfを取るべきですが、見つかりませんでした"),
-                "simplified_chinese" => format!("该方法应该有第一个参数self，但是没有找到"),
-                "traditional_chinese" => format!("該方法應該有第一個參數self，但是沒有找到"),
-                "english" => format!("This method should have the first parameter `self`, but it was not found"),
+                "japanese" => "このメソッドは第一引数にselfを取るべきですが、見つかりませんでした".to_string(),
+                "simplified_chinese" => "该方法应该有第一个参数self，但是没有找到".to_string(),
+                "traditional_chinese" => "該方法應該有第一個參數self，但是沒有找到".to_string(),
+                "english" => "This method should have the first parameter `self`, but it was not found".to_string(),
             ),
             2,
             ErrorKind::NameError,
@@ -51,10 +51,10 @@ pub(crate) fn init_var_error(input: Input, loc: Location, caused_by: String) -> 
         ErrorCore::new(
             vec![SubMessage::only_loc(loc)],
             switch_lang!(
-                "japanese" => format!("`__init__`はメソッドです。メンバ変数として宣言するべきではありません"),
-                "simplified_chinese" => format!("__init__是方法。不能宣告为变量"),
-                "traditional_chinese" => format!("__init__是方法。不能宣告為變量"),
-                "english" => format!("`__init__` should be a method. It should not be defined as a member variable"),
+                "japanese" => "`__init__`はメソッドです。メンバ変数として宣言するべきではありません".to_string(),
+                "simplified_chinese" => "__init__是方法。不能宣告为变量".to_string(),
+                "traditional_chinese" => "__init__是方法。不能宣告為變量".to_string(),
+                "english" => "`__init__` should be a method. It should not be defined as a member variable".to_string(),
             ),
             3,
             ErrorKind::NameError,

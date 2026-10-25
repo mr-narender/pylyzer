@@ -1,5 +1,6 @@
 [package]
 name = "pylyzer_core"
+description = "pylyzer core"
 version.workspace = true
 authors.workspace = true
 license.workspace = true
@@ -11,14 +12,15 @@ debug = ["erg_compiler/debug", "erg_common/debug", "py2erg/debug"]
 large_thread = ["erg_compiler/large_thread", "erg_common/large_thread"]
 pretty = ["erg_compiler/pretty", "erg_common/pretty"]
 backtrace = ["erg_common/backtrace"]
-experimental = ["erg_compiler/experimental", "erg_common/experimental"]
+experimental = ["erg_compiler/experimental", "erg_common/experimental", "parallel"]
+parallel = ["erg_compiler/parallel", "erg_common/parallel"]
 
 [dependencies]
 erg_common = { workspace = true }
 erg_compiler = { workspace = true }
 rustpython-parser = { workspace = true }
 rustpython-ast = { workspace = true }
-py2erg = { version = "0.0.61", path = "../py2erg" }
+py2erg = { version = "0.0.82", path = "../py2erg" }
 
 [lib]
 path = "lib.rs"

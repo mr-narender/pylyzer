@@ -1,5 +1,9 @@
 l = [1, 2, 3]
 _ = l[1:2]
+_ = l[:]
+_ = l[1:]
+_ = l[:1]
+_ = l[1:1:1]
 print(l[2])
 print(l["a"]) # ERR
 
@@ -9,3 +13,7 @@ for i in range(3):
 # ERR
 for i in "abcd":
     print(l[i])
+
+lis = "a,b,c".split(",") if True is not None else []
+if "a" in lis:
+    lis.remove("a") # OK

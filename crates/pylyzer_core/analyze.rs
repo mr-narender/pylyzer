@@ -18,7 +18,7 @@ use erg_compiler::error::{CompileError, CompileErrors};
 use erg_compiler::module::SharedCompilerResource;
 use erg_compiler::varinfo::VarInfo;
 use erg_compiler::GenericHIRBuilder;
-use py2erg::{dump_decl_package, ShadowingMode};
+use py2erg::{dump_decl_package, CommentStorage, ShadowingMode};
 use rustpython_ast::source_code::{RandomLocator, SourceRange};
 use rustpython_ast::{Fold, ModModule};
 use rustpython_parser::{Parse, ParseErrorType};
@@ -60,13 +60,15 @@ impl ASTBuildable for SimplePythonParser {
         IncompleteParseArtifact<AST, ParserRunnerErrors>,
     > {
         let filename = self.cfg.input.filename();
+        let mut comments = CommentStorage::new();
+        comments.read(&code);
         let py_program = self.parse_py_code(code)?;
         let shadowing = if cfg!(feature = "debug") {
             ShadowingMode::Visible
         } else {
             ShadowingMode::Invisible
         };
-        let converter = py2erg::ASTConverter::new(ErgConfig::default(), shadowing);
+        let converter = py2erg::ASTConverter::new(ErgConfig::default(), shadowing, comments);
         let IncompleteArtifact {
             object: Some(erg_module),
             errors,
@@ -98,7 +100,7 @@ impl SimplePythonParser {
             // let mut locator = LinearLocator::new(&py_code);
             let err = locator.locate_error::<_, ParseErrorType>(err);
             let msg = err.to_string();
-            let loc = err.location.unwrap();
+            let loc = err.location.unwrap_or_default();
             let core = ErrorCore::new(
                 vec![],
                 msg,
@@ -222,6 +224,7 @@ impl PythonAnalyzer {
         New::new(cfg)
     }
 
+    #[allow(clippy::result_large_err)]
     fn check(
         &mut self,
         erg_ast: AST,
@@ -254,6 +257,7 @@ impl PythonAnalyzer {
         }
     }
 
+    #[allow(clippy::result_large_err)]
     pub fn analyze(
         &mut self,
         py_code: String,
@@ -261,6 +265,8 @@ impl PythonAnalyzer {
     ) -> Result<CompleteArtifact, IncompleteArtifact> {
         let filename = self.cfg.input.filename();
         let parser = SimplePythonParser::new(self.cfg.copy());
+        let mut comments = CommentStorage::new();
+        comments.read(&py_code);
         let py_program = parser
             .parse_py_code(py_code)
             .map_err(|iart| IncompleteArtifact::new(None, iart.errors.into(), iart.warns.into()))?;
@@ -269,7 +275,7 @@ impl PythonAnalyzer {
         } else {
             ShadowingMode::Invisible
         };
-        let converter = py2erg::ASTConverter::new(self.cfg.copy(), shadowing);
+        let converter = py2erg::ASTConverter::new(self.cfg.copy(), shadowing, comments);
         let IncompleteArtifact {
             object: Some(erg_module),
             errors,
@@ -289,7 +295,7 @@ impl PythonAnalyzer {
         res
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> i32 {
         /*if self.cfg.dist_dir.is_some() {
             reserve_decl_er(self.cfg.input.clone());
         }*/
@@ -311,7 +317,7 @@ impl PythonAnalyzer {
                     dump_decl_package(&self.checker.shared().mod_cache);
                     println!("A declaration file has been generated to __pycache__ directory.");
                 }
-                std::process::exit(0);
+                0
             }
             Err(artifact) => {
                 if !artifact.warns.is_empty() {
@@ -339,7 +345,7 @@ impl PythonAnalyzer {
                     dump_decl_package(&self.checker.shared().mod_cache);
                     println!("A declaration file has been generated to __pycache__ directory.");
                 }
-                std::process::exit(code);
+                code
             }
         }
     }

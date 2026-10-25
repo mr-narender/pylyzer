@@ -1,5 +1,9 @@
 # pylyzer ⚡
 
+> [!IMPORTANT]
+> pylyzer is now under the maintenance phase, which means that only bug fixes will be made and no new features will be added.
+The author is currently cooperating with the development of [astral-sh/ty](https://github.com/astral-sh/ty). Please try that instead!
+
 ![pylyzer_logo_with_letters](https://raw.githubusercontent.com/mtshiba/pylyzer/main/images/pylyzer-logo-with-letters.png)
 
 <a href="https://marketplace.visualstudio.com/items?itemName=pylyzer.pylyzer" target="_blank" rel="noreferrer noopener nofollow"><img src="https://img.shields.io/visual-studio-marketplace/v/pylyzer.pylyzer?style=flat&amp;label=VS%20Marketplace&amp;logo=visual-studio-code" alt="vsm-version"></a>
@@ -32,6 +36,39 @@ cargo install --path . --locked
 Make sure that `cargo`/`rustc` is up-to-date, as pylyzer may be written with the latest (stable) language features.
 
 ### [GitHub Releases](https://github.com/mtshiba/pylyzer/releases/latest)
+
+## How to use
+
+### Check a single file
+
+```sh
+pylyzer file.py
+```
+
+### Check multiple files
+
+```sh
+# glob patterns are supported
+pylyzer file1.py file2.py dir/file*.py
+```
+
+### Check an entire package
+
+If you don't specify a file path, pylyzer will automatically search for the entry point.
+
+```sh
+pylyzer
+```
+
+### Start the language server
+
+This option is used when an LSP-aware editor requires arguments to start pylyzer.
+
+```sh
+pylyzer --server
+```
+
+For other options, check [the manual](https://mtshiba.github.io/pylyzer/options/options/).
 
 ## What is the advantage over pylint, pyright, pytype, etc.?
 
@@ -96,6 +133,8 @@ pylyzer converts Python ASTs to Erg ASTs and passes them to Erg's type checker. 
     * [x] operator
     * [x] function/method
     * [x] class
+    * [ ] `async/await`
+    * [ ] user-defined abstract class
 * [x] type inference
     * [x] variable
     * [x] operator
@@ -124,8 +163,10 @@ pylyzer converts Python ASTs to Erg ASTs and passes them to Erg's type checker. 
     * [x] `Optional`
     * [x] `Literal`
     * [x] `Callable`
-    * [ ] `TypedDict`
+    * [x] `Any`
     * [x] `TypeVar`
+    * [ ] `TypedDict`
+    * [ ] `ClassVar`
     * [ ] `Generic`
     * [ ] `Protocol`
     * [ ] `Final`
@@ -136,15 +177,24 @@ pylyzer converts Python ASTs to Erg ASTs and passes them to Erg's type checker. 
     * [x] type narrowing
     * [ ] others
 * [ ] `collections.abc`
+    * [x] `Collection`
+    * [x] `Container`
+    * [x] `Generator`
     * [x] `Iterable`
     * [x] `Iterator`
-    * [x] `Mapping`
-    * [x] `Sequence`
+    * [x] `Mapping`, `MutableMapping`
+    * [x] `Sequence`, `MutableSequence`
     * [ ] others
 * [x] type assertion (`typing.cast`)
 * [x] type narrowing (`is`, `isinstance`)
-* [ ] `pyi` (stub) files support
-* [ ] glob pattern file check
+* [x] `pyi` (stub) files support
+* [x] glob pattern file check
+* [x] type comment (`# type: ...`)
+* [x] virtual environment support
+* [x] package manager support
+    * [x] `pip`
+    * [x] `poetry`
+    * [x] `uv`
 
 ## Join us!
 

@@ -6,9 +6,12 @@ use erg_common::spawn::exec_new_thread;
 use erg_compiler::artifact::{CompleteArtifact, IncompleteArtifact};
 use pylyzer_core::PythonAnalyzer;
 
+#[allow(clippy::result_large_err)]
 pub fn exec_analyzer(file_path: &'static str) -> Result<CompleteArtifact, IncompleteArtifact> {
     let cfg = ErgConfig {
         input: Input::file(PathBuf::from(file_path)),
+        effect_check: false,
+        ownership_check: false,
         ..Default::default()
     };
     let mut analyzer = PythonAnalyzer::new(cfg);
@@ -21,6 +24,7 @@ fn _expect(file_path: &'static str, warns: usize, errors: usize) -> Result<(), S
     match exec_analyzer(file_path) {
         Ok(artifact) => {
             if artifact.warns.len() != warns {
+                eprintln!("warns: {}", artifact.warns);
                 return Err(format!(
                     "Expected {warns} warnings, found {}",
                     artifact.warns.len()
@@ -33,12 +37,14 @@ fn _expect(file_path: &'static str, warns: usize, errors: usize) -> Result<(), S
         }
         Err(artifact) => {
             if artifact.warns.len() != warns {
+                eprintln!("warns: {}", artifact.warns);
                 return Err(format!(
                     "Expected {warns} warnings, found {}",
                     artifact.warns.len()
                 ));
             }
             if artifact.errors.len() != errors {
+                eprintln!("errors: {}", artifact.errors);
                 return Err(format!(
                     "Expected {errors} errors, found {}",
                     artifact.errors.len()
@@ -51,6 +57,11 @@ fn _expect(file_path: &'static str, warns: usize, errors: usize) -> Result<(), S
 
 pub fn expect(file_path: &'static str, warns: usize, errors: usize) -> Result<(), String> {
     exec_new_thread(move || _expect(file_path, warns, errors), file_path)
+}
+
+#[test]
+fn exec_abc() -> Result<(), String> {
+    expect("tests/abc.py", 0, 0)
 }
 
 #[test]
@@ -73,6 +84,11 @@ fn exec_import() -> Result<(), String> {
 }
 
 #[test]
+fn exec_dict() -> Result<(), String> {
+    expect("tests/dict.py", 0, 2)
+}
+
+#[test]
 fn exec_export() -> Result<(), String> {
     expect("tests/export.py", 0, 0)
 }
@@ -84,7 +100,12 @@ fn exec_func() -> Result<(), String> {
 
 #[test]
 fn exec_class() -> Result<(), String> {
-    expect("tests/class.py", 0, 6)
+    expect("tests/class.py", 0, 8)
+}
+
+#[test]
+fn exec_class_err() -> Result<(), String> {
+    expect("tests/err/class.py", 0, 3)
 }
 
 #[test]
@@ -99,7 +120,7 @@ fn exec_warns() -> Result<(), String> {
 
 #[test]
 fn exec_typespec() -> Result<(), String> {
-    expect("tests/typespec.py", 0, 7)
+    expect("tests/typespec.py", 0, 16)
 }
 
 #[test]
@@ -108,8 +129,28 @@ fn exec_projection() -> Result<(), String> {
 }
 
 #[test]
+fn exec_property() -> Result<(), String> {
+    expect("tests/property.py", 0, 0)
+}
+
+#[test]
+fn exec_property_err() -> Result<(), String> {
+    expect("tests/err/property.py", 0, 1)
+}
+
+#[test]
+fn exec_pyi() -> Result<(), String> {
+    expect("tests/pyi.py", 0, 5)
+}
+
+#[test]
 fn exec_list() -> Result<(), String> {
     expect("tests/list.py", 0, 2)
+}
+
+#[test]
+fn exec_literal() -> Result<(), String> {
+    expect("tests/literal.py", 0, 2)
 }
 
 #[test]
@@ -119,12 +160,12 @@ fn exec_narrowing() -> Result<(), String> {
 
 #[test]
 fn exec_casting() -> Result<(), String> {
-    expect("tests/casting.py", 1, 1)
+    expect("tests/casting.py", 4, 1)
 }
 
 #[test]
 fn exec_collection() -> Result<(), String> {
-    expect("tests/collection.py", 0, 4)
+    expect("tests/collection.py", 0, 5)
 }
 
 #[test]
@@ -133,13 +174,23 @@ fn exec_call() -> Result<(), String> {
 }
 
 #[test]
+fn exec_decl() -> Result<(), String> {
+    expect("tests/decl.py", 0, 1)
+}
+
+#[test]
 fn exec_shadowing() -> Result<(), String> {
-    expect("tests/shadowing.py", 0, 3)
+    expect("tests/shadowing.py", 0, 4)
 }
 
 #[test]
 fn exec_typevar() -> Result<(), String> {
     expect("tests/typevar.py", 0, 3)
+}
+
+#[test]
+fn exec_type_spec() -> Result<(), String> {
+    expect("tests/err/type_spec.py", 0, 6)
 }
 
 #[test]

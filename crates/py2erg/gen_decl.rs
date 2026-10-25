@@ -24,11 +24,11 @@ pub struct DeclFileGenerator {
 }
 
 impl DeclFileGenerator {
-    pub fn new(path: &NormalizedPathBuf, status: CheckStatus) -> Self {
+    pub fn new(path: &NormalizedPathBuf, status: CheckStatus) -> std::io::Result<Self> {
         let (timestamp, hash) = {
-            let metadata = std::fs::metadata(path).unwrap();
+            let metadata = std::fs::metadata(path)?;
             let dummy_hash = metadata.len();
-            (metadata.modified().unwrap(), dummy_hash)
+            (metadata.modified()?, dummy_hash)
         };
         let status = PylyzerStatus {
             status,
@@ -37,16 +37,16 @@ impl DeclFileGenerator {
             hash,
         };
         let code = format!("{status}\n");
-        Self {
+        Ok(Self {
             filename: path
                 .file_name()
-                .unwrap()
+                .unwrap_or_default()
                 .to_string_lossy()
                 .replace(".py", ".d.er"),
             namespace: "".to_string(),
             imported: Set::new(),
             code,
-        }
+        })
     }
 
     pub fn gen_decl_er(mut self, hir: &HIR) -> DeclFile {
@@ -63,6 +63,7 @@ impl DeclFileGenerator {
     fn escape_type(&self, typ: String) -> String {
         typ.replace('%', "Type_")
             .replace("<module>", "")
+            .replace('/', ".")
             .trim_start_matches(self.filename.trim_end_matches(".d.er"))
             .trim_start_matches(&self.namespace)
             .to_string()
@@ -70,7 +71,15 @@ impl DeclFileGenerator {
 
     // e.g. `x: foo.Bar` => `foo = pyimport "foo"; x: foo.Bar`
     fn prepare_using_type(&mut self, typ: &Type) {
-        let namespace = Str::rc(typ.namespace().split('.').next().unwrap());
+        let namespace = Str::rc(
+            typ.namespace()
+                .split('/')
+                .next()
+                .unwrap()
+                .split('.')
+                .next()
+                .unwrap(),
+        );
         if namespace != self.namespace
             && !namespace.is_empty()
             && self.imported.insert(namespace.clone())
@@ -93,7 +102,7 @@ impl DeclFileGenerator {
                 let typ = self.escape_type(ref_t.replace_failure().to_string_unabbreviated());
                 // Erg can automatically import nested modules
                 // `import http.client` => `http = pyimport "http"`
-                let decl = if ref_t.is_py_module() {
+                let decl = if ref_t.is_py_module() && ref_t.typarams()[0].is_str_value() {
                     name = name.split('.').next().unwrap().to_string();
                     let full_path_str = ref_t.typarams()[0].to_string_unabbreviated();
                     let mod_name = mod_name(Path::new(full_path_str.trim_matches('"')));
@@ -127,7 +136,7 @@ impl DeclFileGenerator {
                 let decl = format!(".{class_name}: ClassType");
                 self.code += &decl;
                 self.code.push('\n');
-                if let GenTypeObj::Subclass(class) = &def.obj {
+                if let GenTypeObj::Subclass(class) = def.obj.as_ref() {
                     let sup = class
                         .sup
                         .as_ref()
@@ -173,17 +182,32 @@ impl DeclFileGenerator {
                     self.gen_chunk_decl(chunk);
                 }
             }
+            Expr::Compound(compound) => {
+                for chunk in compound.iter() {
+                    self.gen_chunk_decl(chunk);
+                }
+            }
+            Expr::Call(call) if call.control_kind().is_some() => {
+                for arg in call.args.iter() {
+                    self.gen_chunk_decl(arg);
+                }
+            }
+            Expr::Lambda(lambda) => {
+                for arg in lambda.body.iter() {
+                    self.gen_chunk_decl(arg);
+                }
+            }
             _ => {}
         }
         self.code.push('\n');
     }
 }
 
-fn dump_decl_er(path: &NormalizedPathBuf, hir: &HIR, status: CheckStatus) {
-    let decl_gen = DeclFileGenerator::new(path, status);
+fn dump_decl_er(path: &NormalizedPathBuf, hir: &HIR, status: CheckStatus) -> std::io::Result<()> {
+    let decl_gen = DeclFileGenerator::new(path, status)?;
     let file = decl_gen.gen_decl_er(hir);
     let Some(dir) = path.parent().and_then(|p| p.canonicalize().ok()) else {
-        return;
+        return Ok(());
     };
     let cache_dir = dir.join("__pycache__");
     if !cache_dir.exists() {
@@ -191,19 +215,17 @@ fn dump_decl_er(path: &NormalizedPathBuf, hir: &HIR, status: CheckStatus) {
     }
     let path = cache_dir.join(file.filename);
     if !path.exists() {
-        let _f = File::create(&path);
+        File::create(&path)?;
     }
-    let Ok(f) = File::options().write(true).open(path) else {
-        return;
-    };
+    let f = File::options().write(true).open(path)?;
     let mut f = BufWriter::new(f);
-    let _ = f.write_all(file.code.as_bytes());
+    f.write_all(file.code.as_bytes())
 }
 
 pub fn dump_decl_package(modules: &SharedModuleCache) {
     for (path, module) in modules.raw_iter() {
         if let Some(hir) = module.hir.as_ref() {
-            dump_decl_er(path, hir, module.status);
+            let _ = dump_decl_er(path, hir, module.status);
         }
     }
 }

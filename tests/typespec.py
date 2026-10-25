@@ -1,5 +1,6 @@
 from typing import Union, Optional, Literal, Callable
 from collections.abc import Iterable, Mapping
+import collections
 
 i: Union[int, str] = 1 # OK
 j: Union[int, str] = "aa" # OK
@@ -9,6 +10,23 @@ o: Optional[int] = None # OK
 p: Optional[int] = "a" # ERR
 weekdays: Literal[1, 2, 3, 4, 5, 6, 7] = 1 # OK
 weekdays: Literal[1, 2, 3, 4, 5, 6, 7] = 8 # ERR
+_: tuple[int, ...] = (1, 2, 3)
+_: tuple[int, str] = (1, "a", 1) # OK, tuple[T, U, V] <: tuple[T, U]
+_: list[tuple[int, ...]] = [(1, 2, 3)]
+_: dict[str, dict[str, Union[int, str]]] = {"a": {"b": 1}}
+_: dict[str, dict[str, list[int]]] = {"a": {"b": [1]}}
+_: dict[str, dict[str, dict[str, int]]] = {"a": {"b": {"c": 1}}}
+_: dict[str, dict[str, Optional[int]]] = {"a": {"b": 1}}
+_: dict[str, dict[str, Literal[1, 2]]] = {"a": {"b": 1}}
+_: dict[str, dict[str, Callable[[int], int]]] = {"a": {"b": abs}}
+_: dict[str, dict[str, Callable[[int], None]]] = {"a": {"b": print}}
+_: dict[str, dict[str, Opional[int]]] = {"a": {"b": 1}} # ERR
+_: dict[str, dict[str, Union[int, str]]] = {"a": {"b": None}} # ERR
+_: dict[str, dict[str, list[int]]] = {"a": {"b": ["c"]}} # ERR
+_: dict[str, dict[str, Callable[[int], int]]] = {"a": {"b": print}} # ERR
+_: dict[str, dict[str, Optional[int]]] = {"a": {"b": "c"}} # ERR
+_: dict[str, dict[str, Literal[1, 2]]] = {"a": {"b": 3}} # ERR
+_: list[tuple[int, ...]] = [(1, "a", 3)] # ERR
 
 def f(x: Union[int, str]) -> None:
     pass
@@ -36,3 +54,21 @@ def f(x: Union[int, str, None]):
 f(1)
 f("a")
 f(None)
+
+i1 = 1 # type: int
+# ERR
+i2 = 1 # type: str
+i3 = 1 # type: ignore
+i3 + "a" # OK
+
+def f(it: Iterable):
+    for i in it:
+        print(i)
+
+def f2(it: collections.abc.Iterable):
+    for i in it:
+        print(i)
+
+def g(it: Iterable):
+    for i in it:
+        print(i + "a")  # ERR
