@@ -907,8 +907,8 @@ impl ASTConverter {
             for arg in params
                 .posonlyargs
                 .into_iter()
-                .chain(params.args.into_iter())
-                .chain(params.kwonlyargs.into_iter())
+                .chain(params.args)
+                .chain(params.kwonlyargs)
             {
                 if let Some(default) = arg.default {
                     with_defaults.push((arg.def, *default));
